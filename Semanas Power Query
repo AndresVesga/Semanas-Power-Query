@@ -1,0 +1,15 @@
+let
+    Source = {Number.From(#date(2021,08,02))..Number.From(#date(2021,12,31))},
+    #"Convertida en tabla" = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Convertida en tabla",{{"Column1", type date}}),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Tipo cambiado",{{"Column1", "Fecha"}}),
+    #"Inicio de la semana insertado" = Table.AddColumn(#"Columnas con nombre cambiado", "Inicio de la semana", each Date.StartOfWeek([Fecha], Day.Monday), type date),
+    #"Columnas con nombre cambiado2" = Table.RenameColumns(#"Inicio de la semana insertado",{{"Inicio de la semana", "Inicio"}}),
+    #"Filas agrupadas1" = Table.Group(#"Columnas con nombre cambiado2", {"Inicio"}, {{"Fecha", each _, type table [Recuento=date, Fecha=nullable date]}}),
+    #"Columnas quitadas" = Table.RemoveColumns(#"Filas agrupadas1",{"Inicio"}),
+    #"Índice agregado" = Table.AddIndexColumn(#"Columnas quitadas", "Índice", 1, 1, Int64.Type),
+    #"Se expandió Fecha" = Table.ExpandTableColumn(#"Índice agregado", "Fecha", {"Fecha"}, {"Fecha.1"}),
+    #"Columnas reordenadas" = Table.ReorderColumns(#"Se expandió Fecha",{"Índice", "Fecha.1"}),
+    #"Columnas con nombre cambiado1" = Table.RenameColumns(#"Columnas reordenadas",{{"Índice", "Semana"}, {"Fecha.1", "Fecha"}})
+in
+    #"Columnas con nombre cambiado1"
